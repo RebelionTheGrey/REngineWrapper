@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Root>
+	<ConnectionData>
+		<CSharpAddress>127.0.0.1</CSharpAddress>
+		<CSharpPort>60000</CSharpPort>
+	</ConnectionData>
+	<REnvironments>
+		<RBinPath>C:/Program Files/R/R-3.2.2/bin/x64/</RBinPath>
+		<RHomePath>C:/Program Files/R/R-3.2.2/</RHomePath>
+	</REnvironments>
+  <ClientCount>2</ClientCount>
+  <ClientConfigFile>ServiceConfig.xml</ClientConfigFile>
+	<Libraries>
+		<Library>parallel</Library>
+	</Libraries>
+</Root>
+
+
+
+
+<!-- New document created with EditiX at Tue Oct 20 19:48:35 MSD 2015 -->
+
+
