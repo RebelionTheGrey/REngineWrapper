@@ -236,16 +236,20 @@ namespace RManaged.Core
             var parameters = new CompilerParameters(new[] { "mscorlib.dll", "System.Core.dll" }, "RSlaveClient.exe", true);
             parameters.CompilerOptions = "/platform:x64";
             parameters.GenerateExecutable = true;
+            
 
             CompilerResults results = compiler.CompileAssemblyFromSource(parameters, ClientGenerationAndExecutionCode());
 
+            for (int i = 0; i < clientCount; i++)
+            {
+                var newProcess = new Process();
+                newProcess.StartInfo.FileName = results.CompiledAssembly.CodeBase;
+                newProcess.StartInfo.Arguments = clientConfigFile;
 
+                clientProcess.Add(newProcess);
 
-            var testProcess = new Process();
-            testProcess.StartInfo.FileName = results.CompiledAssembly.CodeBase;
-            testProcess.Start();
-
-            Console.WriteLine("I've run slave!");
+                newProcess.Start();
+            }
 
             Console.ReadLine();
 
