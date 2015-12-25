@@ -96,9 +96,9 @@ namespace RManaged
         */
         private void Initialize()
         {
-            var log = XElement.Load(LogName);
+            var log = XElement.Load(ConfigName);
 
-            Console.WriteLine(LogName);
+            Console.WriteLine(ConfigName);
 
             var library = log.Descendants("Library").Select(elem => { return elem.Value; }).ToList();
 
@@ -263,7 +263,7 @@ namespace RManaged
         }
         public RExecutionThread(string logName) : base()
         {
-            this.LogName = logName;
+            this.ConfigName = logName;
 
             Initialize();
         }

@@ -15,11 +15,18 @@ using Hik.Communication.Scs.Communication;
 using System.Reflection;
 using System.Reflection.Emit;
 
+using System.Diagnostics;
+using System.CodeDom;
+using System.CodeDom.Compiler;
+
 using RDotNet;
 using RDotNet.NativeLibrary;
 
 //using Qoollo.Turbo.Threading;
 
+using System.CodeDom.Compiler;
+using Microsoft.CSharp;
+using System.Diagnostics;
 
 using BaseTypes;
 using Communications;
@@ -37,11 +44,35 @@ namespace RManaged.Core
         private ConcurrentDictionary<long, bool> clientID;
         private SemaphoreSlim semaphores;
 
+        private List<Process> clientProcess;
         //private RShareClientServer RServer;
 
         private REngine decoratedEngine;
         public REngine DecoratedEngine { get { return decoratedEngine; } }
         //private SemaphoreLight lightSemaphores;
+
+        
+        private string ClientGenerationAndExecutionCode()
+        {
+            return @"using System;
+                     using RManaged;
+
+                     namespace RExecutionService
+                     {
+                        class Program
+                        {
+                            static void Main(string[] args)
+                            {
+                                //var tst = ""d:/ ServiceConfig.xml"";
+
+                                var REngineThreadExecutor = new RExecutionThread(args[0]);
+                                //var REngineThreadExecutor = new RExecutionThread(tst);
+
+                                Console.ReadLine();
+                            }
+                        }
+                    }";
+        }
 
         private void RenewEnvironment(BaseMessage message)
         {
@@ -121,27 +152,29 @@ namespace RManaged.Core
         */
         private REngineWrapper(string LogName)
         {
-            this.LogName = LogName;
+            this.ConfigName = LogName;
 
             Initialize();
         }
         private void Initialize()
         {
-            var log = XElement.Load(LogName);
-            
+            var config = XElement.Load(ConfigName);            
 
-            var CSharpServerAddress = log.Descendants("CSharpAddress").Select(elem => { return elem.Value; }).ElementAt(0);
-            var CSharpServerPort = int.Parse(log.Descendants("CSharpPort").Select(elem => { return elem.Value; }).ElementAt(0));
+            var CSharpServerAddress = config.Descendants("CSharpAddress").Select(elem => { return elem.Value; }).ElementAt(0);
+            var CSharpServerPort = int.Parse(config.Descendants("CSharpPort").Select(elem => { return elem.Value; }).ElementAt(0));
+            
+            var clientCount = int.Parse(config.Descendants("ClientCount").Select(elem => { return elem.Value; }).ElementAt(0));
+            var clientConfigFile = config.Descendants("ClientConfigFile").Select(elem => { return elem.Value; }).ElementAt(0);
 
             //var RServerAddress = log.Descendants("RAddress").Select(elem => { return elem.Value; }).ElementAt(0);
             //var RServerPort = int.Parse(log.Descendants("RPort").Select(elem => { return elem.Value; }).ElementAt(0));
 
 
-            var library = log.Descendants("Library").Select(elem => { return elem.Value; }).ToList();
+            var library = config.Descendants("Library").Select(elem => { return elem.Value; }).ToList();
 
             var envPath = Environment.GetEnvironmentVariable("PATH");
-            var RBinPath = log.Descendants("RBinPath").Select(elem => { return elem.Value; }).ElementAt(0);
-            var RHomePath = log.Descendants("RHomePath").Select(elem => { return elem.Value; }).ElementAt(0);
+            var RBinPath = config.Descendants("RBinPath").Select(elem => { return elem.Value; }).ElementAt(0);
+            var RHomePath = config.Descendants("RHomePath").Select(elem => { return elem.Value; }).ElementAt(0);
 
             REngine.SetEnvironmentVariables(RBinPath, RHomePath);
             decoratedEngine = REngine.GetInstance();
@@ -172,8 +205,6 @@ namespace RManaged.Core
             #endregion
 
 
-
-
             Сonnector = new TCPServer(CSharpServerAddress, CSharpServerPort);
 
             ((TCPServer)Сonnector).ClientConnected += ((object messageSender, EventArgs args) =>
@@ -197,6 +228,28 @@ namespace RManaged.Core
 
             clientID = new ConcurrentDictionary<long, bool>();
             semaphores = new SemaphoreSlim(0, 100);
+
+            clientProcess = new List<Process>();
+
+            
+            var compiler = new CSharpCodeProvider();
+            var parameters = new CompilerParameters(new[] { "mscorlib.dll", "System.Core.dll" }, "RSlaveClient.exe", true);
+            parameters.CompilerOptions = "/platform:x64";
+            parameters.GenerateExecutable = true;
+
+            CompilerResults results = compiler.CompileAssemblyFromSource(parameters, ClientGenerationAndExecutionCode());
+
+
+
+            var testProcess = new Process();
+            testProcess.StartInfo.FileName = results.CompiledAssembly.CodeBase;
+            testProcess.Start();
+
+            Console.WriteLine("I've run slave!");
+
+            Console.ReadLine();
+
+            
 
             //EnvironmentWideScript = CreateEnvironmentWideScript();
 

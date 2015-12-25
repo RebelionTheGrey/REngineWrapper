@@ -17,7 +17,7 @@ namespace RManaged
 {
     public class BaseLayer
     {
-        public string LogName { get; protected set; }
+        public string ConfigName { get; protected set; }
         protected long InternalRandomIdentifier { get; set; }
         protected virtual CommunicationProtocol Сonnector { get; set; }
         protected BaseLayer()
