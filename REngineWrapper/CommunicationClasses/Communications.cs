@@ -143,7 +143,7 @@ namespace Communications
             Initialize();
         }
 
-        public void Initialize()
+        public new void Initialize()
         {
             base.Initialize();
 
