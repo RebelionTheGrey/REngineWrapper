@@ -23,8 +23,7 @@ using System.Text;
 using System.IO;
 
 
-using Messages;
-using BaseTypes;
+using RManaged.BaseTypes;
 
 using NFX.Serialization.Slim;
 
@@ -36,7 +35,7 @@ using RDotNet;
 using RDotNet.Utilities;
 
 
-namespace Communications
+namespace RManaged.Communications
 {
     public class PrimitiveSerializerFabric
     {
@@ -184,7 +183,6 @@ namespace Communications
             }
         }
 
-
         public override void SendMessage(BaseMessage message, [Optional] IDictionary<string, object> parameters)
         {
             if (parameters != null)
@@ -204,6 +202,7 @@ namespace Communications
                 }
             }
         }
+
         public override BaseMessage ReceiveMessage([Optional] IDictionary<string, object> parameters)
         {
             if (parameters != null)

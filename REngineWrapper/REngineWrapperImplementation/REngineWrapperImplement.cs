@@ -24,21 +24,19 @@ using RDotNet.NativeLibrary;
 
 //using Qoollo.Turbo.Threading;
 
-using System.CodeDom.Compiler;
 using Microsoft.CSharp;
-using System.Diagnostics;
 
-using BaseTypes;
-using Communications;
-using Proxies;
-using Messages;
+using RManaged.BaseTypes;
+using RManaged.Communications;
 
 using System.Runtime.InteropServices;
 
-using Utilities;
+using RManaged.Utilities;
 
 namespace RManaged.Core
 {
+    using Proxies;
+
     public sealed partial class REngineWrapper : BaseLayer, IREngine
     {
         private ConcurrentDictionary<long, bool> clientID;

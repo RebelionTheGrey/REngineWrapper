@@ -6,19 +6,19 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
 
-using BaseTypes;
-using Proxies;
-using Messages;
-using Communications;
+using RManaged.BaseTypes;
+using RManaged.Communications;
 
 using RDotNet;
 using RDotNet.Internals;
 
-using Utilities;
+using RManaged.Utilities;
 
 
 namespace RManaged.Core
 {
+    using Proxies;
+
     public sealed partial class REngineWrapper : BaseLayer, IREngine
     {
         private static object locker = new object();

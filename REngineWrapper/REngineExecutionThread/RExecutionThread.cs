@@ -33,10 +33,8 @@ using System.ComponentModel.Design;
 
 using System.Windows;
 
-using Messages;
-using BaseTypes;
-using Communications;
-using InstanceFactory;
+using RManaged.BaseTypes;
+using RManaged.Communications;
 
 using NFX;
 using NFX.Serialization;
@@ -45,9 +43,9 @@ using NFX.Serialization.BSON;
 
 using MathNet.Numerics.Random;
 
-using Utilities;
+using RManaged.Utilities;
 
-namespace RManaged
+namespace RManaged.Core
 {
     public sealed class RExecutionThread : BaseLayer, IDisposable
     {

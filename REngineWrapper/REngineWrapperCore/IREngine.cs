@@ -12,7 +12,7 @@ using RDotNet.Utilities;
 using System.IO;
 
 
-namespace BaseTypes
+namespace RManaged.BaseTypes
 {
     public interface IREngine
     {

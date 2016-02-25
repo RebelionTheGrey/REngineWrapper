@@ -6,14 +6,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-using Messages;
-using Communications;
+using RManaged.Communications;
 
 using MathNet.Numerics.Random;
 
 
 
-namespace RManaged
+namespace RManaged.BaseTypes
 {
     public class BaseLayer
     {

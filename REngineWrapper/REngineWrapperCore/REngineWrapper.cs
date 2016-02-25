@@ -13,7 +13,7 @@ using RDotNet.Devices;
 using RDotNet.Dynamic;
 using RDotNet.Internals;
 
-using BaseTypes;
+using RManaged.BaseTypes;
 
 
 namespace RManaged.Core

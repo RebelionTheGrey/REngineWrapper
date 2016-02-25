@@ -8,7 +8,7 @@ using RDotNet;
 using RDotNet.NativeLibrary;
 
 
-namespace Utilities
+namespace RManaged.Utilities
 {
     public static class RHelper
     {

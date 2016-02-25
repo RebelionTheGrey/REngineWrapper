@@ -6,9 +6,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 
-using BaseTypes;
-
-namespace Proxies
+namespace RManaged.Core.Proxies
 {
     /// Delegate that is called on every request on the proxied object
     /// </summary>

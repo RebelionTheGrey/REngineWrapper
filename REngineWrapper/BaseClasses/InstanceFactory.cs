@@ -7,12 +7,11 @@ using System.Threading.Tasks;
 using System.Reflection;
 using System.Reflection.Emit;
 
-using BaseTypes;
-using Messages;
+using RManaged.Communications;
 
 
 
-namespace InstanceFactory
+namespace RManaged.BaseTypes
 {
     public abstract class AbstractStorehouse<T, V>
     {
@@ -23,6 +22,13 @@ namespace InstanceFactory
         public abstract void Remove(T obj);
         public abstract void Renew(T obj, IEnumerable<V> listOfFormals);
     }
+
+}
+
+namespace RManaged.Core
+{
+    using RManaged.BaseTypes;
+
     public class HandlerStoreHouse : AbstractStorehouse<InternalFunctionPresentation, Type>
     {
         protected InternalFunctionPresentation emptyDelegate;

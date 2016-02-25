@@ -6,9 +6,9 @@ using System.Linq.Expressions;
 using RDotNet;
 using RDotNet.NativeLibrary;
 
-using BaseTypes;
+using RManaged.BaseTypes;
 
-namespace Messages
+namespace RManaged.Communications
 {
     [Serializable]
     public class BaseMessage

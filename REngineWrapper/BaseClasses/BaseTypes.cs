@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using RDotNet;
 using RDotNet.NativeLibrary;
 
-using Messages;
+using RManaged.Communications;
 
-namespace BaseTypes
+namespace RManaged.BaseTypes
 {
     //Initialization interface.
     public interface IMethodCall
