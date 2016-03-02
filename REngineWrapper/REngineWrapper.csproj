@@ -98,6 +98,7 @@
     <Compile Include="REngineExecutionThread\RExecutionThread.cs" />
     <Compile Include="REngineWrapperCore\IREngine.cs" />
     <Compile Include="REngineWrapperCore\REngineWrapper.cs" />
+    <Compile Include="REngineWrapperCore\RExtensions.cs" />
     <Compile Include="REngineWrapperImplementation\REngineWrapperImplement.cs" />
     <Compile Include="REngineWrapperImplementation\REngineWrapperInterceptor.cs" />
     <Compile Include="RHelpherClasses\RHelper.cs" />
