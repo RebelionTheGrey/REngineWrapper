@@ -16,7 +16,7 @@ using RManaged.BaseTypes;
 
 namespace RManaged.Extensions
 {
-    public static class SymbolicExpressionExtension
+    public static class SymbolicExpressionExtensionWrapper
     {
         public static CharacterVector AsCharacter(this SymbolicExpression expression)
         {
