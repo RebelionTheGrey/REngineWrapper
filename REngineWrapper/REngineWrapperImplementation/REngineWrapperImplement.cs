@@ -32,6 +32,8 @@ using RManaged.Communications;
 using System.Runtime.InteropServices;
 
 using RManaged.Utilities;
+using RManaged.Extensions;
+
 
 namespace RManaged.Core
 {

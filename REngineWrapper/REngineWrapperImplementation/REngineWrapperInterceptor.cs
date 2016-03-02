@@ -13,7 +13,7 @@ using RDotNet;
 using RDotNet.Internals;
 
 using RManaged.Utilities;
-
+using RManaged.Extensions;
 
 namespace RManaged.Core
 {

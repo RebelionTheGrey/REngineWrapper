@@ -14,7 +14,7 @@ using RDotNet.Internals;
 
 using RManaged.BaseTypes;
 
-namespace REngineWrapper.Extensions
+namespace RManaged.Extensions
 {
     public static class SymbolicExpressionExtension
     {
