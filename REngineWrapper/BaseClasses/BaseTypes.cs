@@ -11,26 +11,6 @@ using RManaged.Communications;
 
 namespace RManaged.BaseTypes
 {
-    //Initialization interface.
-    public interface IMethodCall
-    {
-        string GetMethod();
-    }
-    public interface IDataCollection<T>
-    {
-        ICollection<T> GetData();
-    }    
-    public interface IDataDictionary<T, V>
-    {
-        IDictionary<T, V> GetData();
-        V GetData(T key);
-    }
-    public interface IEnvironment 
-    {
-        string GetEnvironmentName();
-    }
-
-
     public delegate void MessageReceiveHandler(object sender, EventArgs message);
     public delegate void InternalFunctionPresentation(BaseMessage message);
 
@@ -46,4 +26,7 @@ namespace RManaged.BaseTypes
     public class MulticastExecutionAttribute : Attribute { }
     public class EnvironmentSwapAttribute : Attribute { }
     public class AnswerableAttribute : Attribute { }
+
+
+
 }

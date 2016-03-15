@@ -37,7 +37,7 @@ using RDotNet.Utilities;
 
 namespace RManaged.Communications
 {
-    public class PrimitiveSerializerFabric
+    public static class SerializerFabric
     {
         public static dynamic GetInstance(string serializerType, [Optional] ICollection<object> parameters)
         {
@@ -51,11 +51,6 @@ namespace RManaged.Communications
         }
         public static dynamic GetDefaultInstance([Optional] ICollection<object> parameters)
         {
-            //var slimSerializer = new SlimSerializer();
-            //slimSerializer.TypeMode = TypeRegistryMode.PerCall;
-
-            //return slimSerializer;
-
             var binarySerializer = new BinaryFormatter();
             binarySerializer.FilterLevel = TypeFilterLevel.Low;
 
@@ -63,12 +58,17 @@ namespace RManaged.Communications
         }
     }
 
-    public abstract class CommunicationProtocol
+    public abstract class CommunicationProtocol : IDisposable
     {
+        protected Stream stream;
+
+        public string Address { get; protected set; }
+        public int Port { get; protected set; }
+
         public event MessageReceiveHandler MessageReceived;
         public event MessageReceiveHandler MessageSent;
 
-        protected dynamic Serializer { get; set; } //no better deep polymorphism variant found ((
+        protected dynamic Serializer { get; set; }
 
         protected virtual void OnMessageReceived(BaseMessage message)
         {
@@ -100,41 +100,67 @@ namespace RManaged.Communications
         public virtual Task SendMessageAsync(BaseMessage message, [Optional] IDictionary<string, object> parameters) { return Task.Delay(1); }
         public virtual Task<BaseMessage> ReceiveMessageAsync([Optional] IDictionary<string, object> parameters) { return Empty<BaseMessage>.Task; }
 
-        protected virtual void Initialize()
+        #region IDisposable Support
+        protected bool disposedValue = false; // Для определения избыточных вызовов
+
+        protected virtual void Dispose(bool disposing)
         {
-            Serializer = PrimitiveSerializerFabric.GetDefaultInstance();
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    
+                }
+
+                // TODO: освободить неуправляемые ресурсы (неуправляемые объекты) и переопределить ниже метод завершения.
+                // TODO: задать большим полям значение NULL.
+
+                disposedValue = true;
+            }
         }
+
+        // TODO: переопределить метод завершения, только если Dispose(bool disposing) выше включает код для освобождения неуправляемых ресурсов.
+        ~CommunicationProtocol()
+        {
+          // Не изменяйте этот код. Разместите код очистки выше, в методе Dispose(bool disposing).
+            Dispose(false);
+        }
+
+        // Этот код добавлен для правильной реализации шаблона высвобождаемого класса.
+        public void Dispose()
+        {
+            // Не изменяйте этот код. Разместите код очистки выше, в методе Dispose(bool disposing).
+            Dispose(true);
+            // TODO: раскомментировать следующую строку, если метод завершения переопределен выше.
+             GC.SuppressFinalize(this);
+        }
+        #endregion
     }
 
-    public class TCPClient : CommunicationProtocol, IDisposable
+    public sealed class TCPClient : CommunicationProtocol
     {
-        protected virtual IScsClient TcpClient { get; set; }
-
-        public virtual string Address { get; protected set; }
-        public virtual int Port { get; protected set; }
+        private IScsClient TcpClient { get; set; }
 
         protected override void ReceiveMessageHandler(object messageSender, EventArgs messageArgs)
         {
-            var receivedData = (ScsRawDataMessage)((MessageEventArgs)messageArgs).Message;
+            var receivedData = ((MessageEventArgs)messageArgs).Message as ScsRawDataMessage;
+            stream.Write(receivedData.MessageData, 0, receivedData.MessageData.Length);
 
-            using (var stream = new MemoryStream(receivedData.MessageData))
-            {
-                var temporaryMessage = (BaseMessage)Serializer.Deserialize(stream);
-                
-                Action<BaseMessage> ExecuteHandlers = (BaseMessage message) => base.OnMessageReceived(message);
-                ExecuteHandlers(temporaryMessage);
-            }
+            var deserializedMessage = (BaseMessage)Serializer.Deserialize(stream);
+            OnMessageReceived(deserializedMessage);
+
+            stream.Seek(0, SeekOrigin.Begin);
+
+            //Action<BaseMessage> ExecuteHandlers = (BaseMessage message) => base.OnMessageReceived(message);
+            //ExecuteHandlers(deserializedMessage);
         }        
         public override void SendMessage(BaseMessage message, [Optional] IDictionary<string, object> parameters)
         {
-            using (var stream = new MemoryStream())
-            {
-                Serializer.Serialize(stream, message);
-                TcpClient.SendMessage(new ScsRawDataMessage(stream.ToArray()));
-            }
+            Serializer.Serialize(stream, message);
+            TcpClient.SendMessage(new ScsRawDataMessage((stream as MemoryStream).ToArray()));
         }
 
-        public TCPClient(string address, int port)
+        public TCPClient(string address, int port): base()
         {
             this.Address = address;
             this.Port = port;
@@ -142,45 +168,53 @@ namespace RManaged.Communications
             Initialize();
         }
 
-        public new void Initialize()
+        private void Initialize()
         {
-            base.Initialize();
+            stream = new MemoryStream();
+            Serializer = SerializerFabric.GetDefaultInstance();
 
             TcpClient = ScsClientFactory.CreateClient(new ScsTcpEndPoint(Address, Port));
             TcpClient.MessageReceived += ReceiveMessageHandler;
 
             TcpClient.Connect();
         }
-        public void Dispose()
+
+        #region Dispose
+        protected override void Dispose(bool disposing)
         {
-            TcpClient.Disconnect();
-            TcpClient.Dispose();
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    TcpClient.Disconnect();
+                    TcpClient.Dispose();
+                }
+            }
         }
+
+        #endregion
     }
 
-    public class TCPServer : CommunicationProtocol, IDisposable
+    public sealed class TCPServer : CommunicationProtocol
     {
-        protected virtual IScsServer TcpServer { get; set; }
-        protected virtual IDictionary<long, SynchronizedMessenger<IScsServerClient>> ClientMessengers { get; set; }
-
-        public virtual string Address { get; protected set; }
-        public virtual int Port { get; protected set; }
-
+        private IScsServer TcpServer { get; set; }
+        private IDictionary<long, SynchronizedMessenger<IScsServerClient>> ClientMessengers { get; set; }
 
         public event MessageReceiveHandler ClientConnected;
         public event MessageReceiveHandler ClientDisconnected;
 
         protected override void ReceiveMessageHandler(object messageSender, EventArgs messageArgs)
         {
-            var receivedData = (ScsRawDataMessage)((MessageEventArgs)messageArgs).Message;
+            var receivedData = ((MessageEventArgs)messageArgs).Message as ScsRawDataMessage;
+            stream.Write(receivedData.MessageData, 0, receivedData.MessageData.Length);
 
-            using (var stream = new MemoryStream(receivedData.MessageData))
-            {
-                var temporaryMessage = (BaseMessage)Serializer.Deserialize(stream);
+            var deserializedMessage = (BaseMessage)Serializer.Deserialize(stream);
+            OnMessageReceived(deserializedMessage);
 
-                Action<BaseMessage> ExecuteHandlers = (BaseMessage message) => base.OnMessageReceived(message);
-                ExecuteHandlers(temporaryMessage);
-            }
+            stream.Seek(0, SeekOrigin.Begin);
+
+            //Action<BaseMessage> ExecuteHandlers = (BaseMessage message) => base.OnMessageReceived(message);
+            //ExecuteHandlers(temporaryMessage);
         }
 
         public override void SendMessage(BaseMessage message, [Optional] IDictionary<string, object> parameters)
@@ -189,16 +223,10 @@ namespace RManaged.Communications
             {
                 if (parameters.ContainsKey("clientID"))
                 {
-                    object clientID = null;
-                    parameters.TryGetValue("clientID", out clientID);
+                    var client = TcpServer.Clients.GetAllItems().First(elem => elem.ClientId == (long)parameters["clientID"]);
 
-                    var client = TcpServer.Clients.GetAllItems().Find(elem => elem.ClientId == (long)clientID);
-
-                    using (var stream = new MemoryStream())
-                    {
-                        Serializer.Serialize(stream, message);
-                        client.SendMessage(new ScsRawDataMessage(stream.ToArray()));
-                    }
+                    Serializer.Serialize(stream, message);
+                    client.SendMessage(new ScsRawDataMessage((stream as MemoryStream).ToArray()));
                 }
             }
         }
@@ -209,19 +237,19 @@ namespace RManaged.Communications
             {
                 if (parameters.ContainsKey("clientID"))
                 {
-                    object clientID = null;
-                    parameters.TryGetValue("clientID", out clientID);
+                    var receivedData = ClientMessengers[(long)parameters["clientID"]].ReceiveMessage<ScsRawDataMessage>();
+                    stream.Write(receivedData.MessageData, 0, receivedData.MessageData.Length);
 
-                    var receivedData = ClientMessengers[(long)clientID].ReceiveMessage<ScsRawDataMessage>();
+                    var deserializedMessage = (BaseMessage)Serializer.Deserialize(stream);
+                    OnMessageReceived(deserializedMessage);
 
-                    using (var stream = new MemoryStream(receivedData.MessageData))
-                    {
-                        return (BaseMessage)Serializer.Deserialize(stream);
-                    }
+                    stream.Seek(0, SeekOrigin.Begin);
+
+                    return (BaseMessage)Serializer.Deserialize(stream);
                 }
             }
 
-            return new BaseMessage();
+            return new EmptyMessage();
         }
 
         public override Task SendMessageAsync(BaseMessage message, [Optional] IDictionary<string, object> parameters) 
@@ -233,18 +261,15 @@ namespace RManaged.Communications
             return Task.Run(() => ReceiveMessage(parameters));
         }
 
-        public virtual void MulticastSendMessage(BaseMessage message, [Optional] ICollection<long> exceptClientIDs)
+        public void MulticastSendMessage(BaseMessage message, [Optional] ICollection<long> exceptClientIDs)
         {
             var allClients = TcpServer.Clients.GetAllItems();
             var appropriateClients = exceptClientIDs != null ? allClients : allClients.Where(elem => !exceptClientIDs.Contains(elem.ClientId));
 
-            using (var stream = new MemoryStream())
-            {
-                Serializer.Serialize(stream, message);
-                appropriateClients.AsParallel().ForAll(elem => { elem.SendMessage(new ScsRawDataMessage(stream.ToArray())); });
-            }
+            Serializer.Serialize(stream, message);
+            appropriateClients.AsParallel().ForAll(elem => { elem.SendMessage(new ScsRawDataMessage((stream as MemoryStream).ToArray())); });
         }
-        public virtual Task MulticastSendMessageAsync(BaseMessage message, [Optional] ICollection<long> exceptClientIDs)
+        public Task MulticastSendMessageAsync(BaseMessage message, [Optional] ICollection<long> exceptClientIDs)
         {
             var allClients = TcpServer.Clients.GetAllItems();
             var appropriateClients = exceptClientIDs.Count == 0 ? allClients : allClients.Where(elem => !exceptClientIDs.Contains(elem.ClientId));
@@ -258,10 +283,8 @@ namespace RManaged.Communications
             }
         }
 
-        protected virtual void Connected(object messageSender, EventArgs messageArgs)
+        private void Connected(object messageSender, EventArgs messageArgs)
         {
-            //((ServerClientEventArgs)messageArgs).Client.MessageReceived += ReceiveMessageHandler;
-
             MessageReceiveHandler handler = ClientConnected;
             var client = ((ServerClientEventArgs)messageArgs).Client;
 
@@ -273,7 +296,7 @@ namespace RManaged.Communications
             if (handler != null)
                 handler(messageSender, messageArgs);
         }
-        protected virtual void Disconnected(object messageSender, EventArgs messageArgs)
+        private void Disconnected(object messageSender, EventArgs messageArgs)
         {
             var client = ((ServerClientEventArgs)messageArgs).Client;
 
@@ -302,10 +325,8 @@ namespace RManaged.Communications
             Initialize();
         }
 
-        private new void Initialize()
+        private void Initialize()
         {
-            base.Initialize();
-
             ClientMessengers = new ConcurrentDictionary<long, SynchronizedMessenger<IScsServerClient>>();
 
             TcpServer = ScsServerFactory.CreateServer(new ScsTcpEndPoint(Address, Port));           
@@ -315,43 +336,20 @@ namespace RManaged.Communications
 
             TcpServer.Start();
         }
-        public void Dispose()
+
+        #region Dispose
+        protected override void Dispose(bool disposing)
         {
-            TcpServer.Clients.ClearAll();
-            TcpServer.Stop();
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    TcpServer.Clients.ClearAll();
+                    TcpServer.Stop();
+                }
+            }
         }
+
+        #endregion
     }
-
-    /*
-    public class RShareClientServer
-    {
-        protected REngine Engine { get; set; }
-
-        public RShareClientServer(REngine engine)
-        {
-            Engine = engine;
-        }
-
-        public void ServerRshareInitialize(string address, int port, params string [] parameters)
-        {
-            var concatParams = string.Join(", ", parameters);
-            Engine.Evaluate(string.Format(@"getStatus({0})", port.ToString()));
-            var script = string.Format(string.Format(@"startRshare(port = {0}, {1});", port.ToString(), concatParams));
-            Engine.Evaluate(script);
-            Engine.Evaluate(string.Format(@"getStatus({0})", port.ToString()));
-        }
-        public void GetSharedEnvironment()
-        {
-            var script = string.Format(@"remove(list = ls(globalenv()));
-                                         sapply(ls.Rshare(), function(elem) { assign(elem, get.Rshare(elem)); });");
-            Engine.Evaluate(script);
-        }
-        public void SetSharedEnvironment()
-        {
-            var script = string.Format(@"remove.Rshare(list = ls(globalenv()));
-                                         sapply(ls(globalenv()), function(elem) { assign.Rshare(elem, get(elem)); });");
-            Engine.Evaluate(script);
-        }
-    }
-    */
 }

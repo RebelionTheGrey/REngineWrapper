@@ -7,87 +7,90 @@ using RDotNet;
 using RDotNet.NativeLibrary;
 
 using RManaged.BaseTypes;
+using MathNet.Numerics.Random;
+
+namespace RManaged.Communications
+{
+
+}
+
+
 
 namespace RManaged.Communications
 {
     [Serializable]
-    public class BaseMessage
+    public abstract class BaseMessage
     {
-        public virtual ulong ID { get; set; }
+        private static RandomSource randomSource;
+        static BaseMessage()
+        {
+            randomSource = new Mcg59();
+        }
+
+        public long ID { get; protected set; }
+
+        public BaseMessage() : this(RandomExtensions.NextInt64(randomSource)) { }
+        public BaseMessage(long id)
+        {
+            ID = id;
+        }
     }
 
     [Serializable]
-    public class MethodCallMessage : BaseMessage, IMethodCall, IDataCollection<object>
+    public class MethodCallMessage : BaseMessage
     {
-        protected string methodName;
-        protected readonly ICollection<object> parameters;
-
+        public string MethodName { get; protected set; }
+        public ICollection<object> Parameters { get; protected set; }
         public ICollection<Type> MethodAttributes { get; protected set; }
 
-        public string GetMethod()
-        {
-            return methodName;
-        }
-        public ICollection<object> GetData()
-        {
-            return parameters;
-        }
         public MethodCallMessage(string methodName, ICollection<object> parameters, ICollection<Type> methodAttributes)
         {
-            this.methodName = methodName;
-            this.parameters = parameters;
+            MethodName = methodName;
+            Parameters = parameters;
             MethodAttributes = methodAttributes;
         }
     }    
 
     [Serializable]
-    public class EnvironmentWideMessage : BaseMessage, IEnvironment, IDataCollection<byte []>
-    {
-        protected ICollection<byte []> data;
-        protected string environmentName;
+    public class EnvironmentWideMessage : BaseMessage
+    { 
+        public ICollection<byte []> Data { get; protected set; }
+        public string EnvironmentName { get; protected set; }
 
-        public ICollection<byte []> GetData()
+        public EnvironmentWideMessage(string environmentName, ICollection<byte []> data)
         {
-            return data;
-        }
-
-        public string GetEnvironmentName()
-        {
-            return environmentName;
-        }
-
-        public EnvironmentWideMessage(ICollection<byte []> data)
-        {
-            this.data = data;
+            Data = data;
+            EnvironmentName = environmentName;
         }
     }    
 
     [Serializable]
-    public class AnswerMessage : BaseMessage, IDataDictionary<string, ICollection<byte []>>
+    public class AnswerMessage : BaseMessage
     {
         public bool IsValidAnswer { get; protected set; }
-        protected IDictionary<string, ICollection<byte[]>> SerializedData { get; set; }
 
-        public AnswerMessage(IDictionary<string, ICollection<byte[]>> data, bool isValidAnswer)
+        public byte [] SerializedResult { get; protected set; }
+        public byte [] SerializedEnvironment { get; protected set; }
+
+        public AnswerMessage(byte [] serializedResult, byte[] serializedEnvironment, bool isValidAnswer)
         {
-            this.SerializedData = data;
+            SerializedResult = serializedResult;
+            SerializedEnvironment = serializedEnvironment;
+
             IsValidAnswer = isValidAnswer;
         }
+    }
 
-        public IDictionary<string, ICollection<byte[]>> GetData()
-        {
-            return SerializedData; 
-        }
-        public ICollection<byte[]> GetData(string key)
-        {
-            return SerializedData.FirstOrDefault(elem => elem.Key.Equals(key)).Value;
-        }
+    [Serializable]
+    public class EmptyMessage : BaseMessage
+    {
+
     }
 
     [Serializable]
     public class TransferMessageWrapper : EventArgs
     {
-        public virtual BaseMessage Message { get; set; }
+        public virtual BaseMessage Message { get; protected set; }
         public TransferMessageWrapper(BaseMessage message)
         {
             Message = message;

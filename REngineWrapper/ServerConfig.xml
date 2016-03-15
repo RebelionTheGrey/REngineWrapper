@@ -11,9 +11,9 @@
 	</REnvironments>
   <ClientCount>2</ClientCount>
   <ClientConfigFile>ServiceConfig.xml</ClientConfigFile>
-	<Libraries>
-		<Library>parallel</Library>
-	</Libraries>
+  <PreloadConfiguration>
+    <PreloadConfigName>PreloadServerConfig.R</PreloadConfigName>
+  </PreloadConfiguration>
 </Root>
 
 

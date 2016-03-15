@@ -91,6 +91,7 @@
     <Compile Include="BaseClasses\BaseLayer.cs" />
     <Compile Include="BaseClasses\BaseTypes.cs" />
     <Compile Include="BaseClasses\InstanceFactory.cs" />
+    <Compile Include="BaseClasses\Script.cs" />
     <Compile Include="CommunicationClasses\Communications.cs" />
     <Compile Include="CommunicationClasses\Messages.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -99,12 +100,15 @@
     <Compile Include="REngineWrapperCore\IREngine.cs" />
     <Compile Include="REngineWrapperCore\REngineWrapper.cs" />
     <Compile Include="REngineWrapperCore\RExtensions.cs" />
+    <Compile Include="REngineWrapperImplementation\ExecutionCode.cs" />
     <Compile Include="REngineWrapperImplementation\REngineWrapperImplement.cs" />
     <Compile Include="REngineWrapperImplementation\REngineWrapperInterceptor.cs" />
     <Compile Include="RHelpherClasses\RHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="REngineExecutionThread\PreloadServiceConfig.R" />
+    <None Include="REngineWrapperImplementation\PreloadServerConfig.R" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ServerConfig.xml" />

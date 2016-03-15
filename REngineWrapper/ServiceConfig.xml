@@ -8,15 +8,17 @@
 		<RBinPath>C:/Program Files/R/R-3.2.2/bin/x64/</RBinPath>
 		<RHomePath>C:/Program Files/R/R-3.2.2/</RHomePath>
 	</REnvironments>
-	<Libraries>
-		<Library>wmtsa</Library>
-		<Library>fGarch</Library>
-		<Library>fArma</Library>
-		<Library>broman</Library>
-		<Library>parallel</Library>
-		<Library>forecast</Library>			
-		<Library>Rsolnp</Library>
-	</Libraries>
+  <PreloadConfiguration>
+    <PreloadConfigName>PreloadServiceConfig.R</PreloadConfigName>
+    <RExecutionProcess>
+      <Name>RSlaveClient.exe</Name>
+      <Source>ExecutionCode.cs</Source>
+      <Libraries>
+        <Library>mscorlib.dll</Library>
+        <Library>System.Core.dll</Library>
+      </Libraries>
+    </RExecutionProcess>
+  </PreloadConfiguration>
 </Root>
 
 

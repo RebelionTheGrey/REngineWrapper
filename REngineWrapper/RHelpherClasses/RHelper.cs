@@ -12,6 +12,8 @@ namespace RManaged.Utilities
 {
     public static class RHelper
     {
+        public const string GlobalEnvironmentName = ".GlobalEnv";
+
         public readonly static List<string> RSystemWidedInternals = new List<string>()
         {
             "dataToSerialize", "serializedData", "exceptNames", "changedVariablesName", "changedVariableValues", "changedVariableList", "elem",
@@ -67,7 +69,7 @@ namespace RManaged.Utilities
                                                 changedVariableList{0} <- setNames(as.list(changedVariableValues{0}), changedVariablesName{0});",
                                               identifier, environment);
 
-            return engine.Evaluate(packingScript);
+            return engine.Evaluate(packingScript); // maybe better to use changedVariableValues{0} <- lapply(changedVariablesName{0}, function(elem{0}) get(elem{0})); changedVariableList{0} <- setNames(changedVariableValues{0}, changedVariablesName{0});",
         }
         public static void SetRenewedEnvironment(this REngine engine, byte [] serializedEnvironment, long identifier, string environmentName = ".GlobalEnv")
         {
