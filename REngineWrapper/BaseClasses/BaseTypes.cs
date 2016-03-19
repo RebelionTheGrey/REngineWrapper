@@ -26,7 +26,4 @@ namespace RManaged.BaseTypes
     public class MulticastExecutionAttribute : Attribute { }
     public class EnvironmentSwapAttribute : Attribute { }
     public class AnswerableAttribute : Attribute { }
-
-
-
 }

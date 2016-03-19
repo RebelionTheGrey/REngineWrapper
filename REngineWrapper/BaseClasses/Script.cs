@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.IO;
+using System.Runtime.InteropServices;
 
 namespace RManaged.BaseTypes
 {
@@ -14,10 +15,11 @@ namespace RManaged.BaseTypes
         public bool IsInitialized { get; protected set; }
         public List<Tuple<string, bool>> InternalFunctions { get; protected set; }
 
-        public Script(string scriptName, IEnumerable<Tuple<string, bool>> internalFunctions)
+        public Script(string scriptName, [Optional] ICollection<Tuple<string, bool>> internalFunctions, [Optional] object[] identifiers)
         {
             IsValid = false;
             IsInitialized = false;
+            InternalFunctions = null;
 
             using (TextReader reader = File.OpenText(scriptName))
             {
@@ -28,6 +30,11 @@ namespace RManaged.BaseTypes
 
                 if (internalFunctions != null)
                     InternalFunctions.AddRange(internalFunctions);
+            }
+
+            if (identifiers != null)
+            {
+                ScriptBody = string.Format(ScriptBody, identifiers);
             }
         }
     }

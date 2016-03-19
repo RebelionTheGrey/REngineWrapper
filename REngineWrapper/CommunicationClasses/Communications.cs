@@ -92,10 +92,8 @@ namespace RManaged.Communications
         protected virtual void ReceiveMessageHandler(object messageSender, EventArgs messageArgs) { }
         protected virtual void SendMessageHandler(object messageSender, EventArgs messageArgs) { }
 
-
         public virtual void SendMessage(BaseMessage message, [Optional] IDictionary<string, object> parameters) { }
         public virtual BaseMessage ReceiveMessage([Optional] IDictionary<string, object> parameters) { return null; }
-
 
         public virtual Task SendMessageAsync(BaseMessage message, [Optional] IDictionary<string, object> parameters) { return Task.Delay(1); }
         public virtual Task<BaseMessage> ReceiveMessageAsync([Optional] IDictionary<string, object> parameters) { return Empty<BaseMessage>.Task; }

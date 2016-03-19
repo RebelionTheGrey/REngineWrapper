@@ -51,7 +51,7 @@ namespace RManaged.Core
 
             if (answerMessage != null)
             {
-                var serializedREnvironment = answerMessage.GetData("environment").ElementAt(0);
+                var serializedREnvironment = answerMessage.SerializedEnvironment.ElementAt(0);
                 DecoratedEngine.SetRenewedEnvironment(serializedREnvironment, InternalRandomIdentifier);
             }
         }
@@ -61,8 +61,8 @@ namespace RManaged.Core
 
             if (answerMessage != null)
             {
-                var serializedRObjects = answerMessage.GetData("result");
-                var serializedREnvironment = answerMessage.GetData("environment").ElementAt(0);
+                var serializedRObjects = answerMessage.SerializedResult;
+                var serializedREnvironment = answerMessage.SerializedEnvironment.ElementAt(0);
 
                 List<SymbolicExpression> parsedRData = new List<SymbolicExpression>();
 

@@ -1,0 +1,2 @@
+﻿incomedData{0} <- unserialize(serializedEnvironmentData{0});
+sapply(names(incomedData{0}), function(elem{0}) { assign(elem{0}, incomedData{0}[[elem{0}]], envir = {1}); }));

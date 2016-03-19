@@ -7,84 +7,81 @@ using System.Threading.Tasks;
 using RDotNet;
 using RDotNet.NativeLibrary;
 
+using RManaged.BaseTypes;
+
+using System.Runtime.InteropServices;
 
 namespace RManaged.Utilities
 {
     public static class RHelper
     {
-        public const string GlobalEnvironmentName = ".GlobalEnv";
+        public static Script GetEnvironmentListScript { get; private set; }
+        public static Script SetRenewedEnvironmentListScript { get; private set; }
+        public static Script SerializeRObjectScript { get; private set; }
+        public static Script DeserializeRObjectScript { get; private set; }
+        public static string GlobalEnvironmentName { get { return ".GlobalEnv"; } }
 
-        public readonly static List<string> RSystemWidedInternals = new List<string>()
+        public readonly static List<string> RSystemWidedInternals;
+        public readonly static List<string> RSystemInternals;
+
+        static RHelper()
         {
-            "dataToSerialize", "serializedData", "exceptNames", "changedVariablesName", "changedVariableValues", "changedVariableList", "elem",
-            "incomedData", "serializedEnvironmentData", "objectToDeserialize", "deserializedRObject", "internalCluster", "maxThreads"
-        };
+            RSystemInternals = new List<string>()
+            {
+                "dataToSerialize", "serializedData", "exceptNames", "changedVariablesName", "changedVariableValues", "changedVariableList", "elem",
+                "incomedData", "serializedEnvironmentData", "objectToDeserialize", "deserializedRObject", "internalCluster", "maxThreads", "totalInternalVariablesList"
+            };
 
-        public readonly static List<string> RSystemInternals = new List<string>()
+            RSystemWidedInternals = RSystemInternals.Select(elem => { return (elem + "{0}"); }).ToList();
+
+            GetEnvironmentListScript = new Script("GetEnvironmentListScript.Rwided", null);
+            SetRenewedEnvironmentListScript = new Script("SetRenewedEnvironmentScript.Rwided", null);
+            SerializeRObjectScript = new Script("SerializeRObject.Rwided", null);
+            DeserializeRObjectScript = new Script("DeserializeRObject.Rwided", null);
+        }
+
+        public static string GetWidedScript(string baseScript, params object [] elems)
         {
-
-        };
+            return string.Format(baseScript, elems);
+        }
 
         public static byte[] SerializeRObject(this REngine engine, SymbolicExpression dataToRSerialize, long identifier)
         {
             var rawDataName = string.Format("dataToSerialize{0}", identifier);
-
             engine.SetSymbol(rawDataName, dataToRSerialize);
-            var byteArray = engine.Evaluate(string.Format("serializedData{0} <- serialize(dataToSerialize{0}, NULL);", identifier))
-                                           .AsRaw().ToArray();
+
+            var widedScript = GetWidedScript(GetEnvironmentListScript.ScriptBody, identifier);
+            var byteArray = engine.Evaluate(widedScript).AsRaw().ToArray();
 
             return byteArray;
         }
-        public static SymbolicExpression GetEnvironmentList(this REngine engine, long identifier, string environment = ".GlobalEnv", params ICollection<string> [] except)
+        public static SymbolicExpression GetEnvironmentList(this REngine engine, long identifier, [Optional] string environmentName, [Optional] ICollection<string> except)
         {
-            string variableNamesSequence = "fakeVariable"; //stupid method, but...
+            var replacedInternals = RSystemWidedInternals.Select(elem => { return string.Format(elem, identifier); });
+            var RInternalsVector = engine.CreateCharacterVector(replacedInternals);
 
-            if (except != null)
-            {
-                foreach (var elem in except)
-                {
-                    var widedNames = elem.Select(s => { return string.Format(s+@"{0}", identifier); });
-                    variableNamesSequence = string.Format(string.Join(@""", """, widedNames), identifier);
-                }
-            }
+            engine.SetSymbol(string.Format("exceptNames{0}", identifier), RInternalsVector);
 
-            variableNamesSequence = @"""" + variableNamesSequence + @"""";
+            var dataEnvironment = environmentName != default(string) ? GlobalEnvironmentName : environmentName;
+            var widedScript = GetWidedScript(GetEnvironmentListScript.ScriptBody, identifier, dataEnvironment);
 
-            Console.WriteLine("Total except variables string is " + variableNamesSequence);
-
-            engine.Evaluate(string.Format(@"exceptNames{0} <- c({1})", identifier, variableNamesSequence));
-
-            var packingScript = string.Format(@"changedVariablesName{0} <- ls({1});
-                                                changedVariablesName{0} <- changedVariablesName{0}[!(changedVariablesName{0} %in% exceptNames{0})];
-
-                                                print(""environment names:"");
-                                                print(changedVariablesName{0});
-                                                print(""exceptNames:"");
-                                                print(exceptNames{0});
-
-
-
-
-                                                changedVariableValues{0} <- sapply(changedVariablesName{0}, function(elem{0}) get(elem{0}));
-                                                changedVariableList{0} <- setNames(as.list(changedVariableValues{0}), changedVariablesName{0});",
-                                              identifier, environment);
-
-            return engine.Evaluate(packingScript); // maybe better to use changedVariableValues{0} <- lapply(changedVariablesName{0}, function(elem{0}) get(elem{0})); changedVariableList{0} <- setNames(changedVariableValues{0}, changedVariablesName{0});",
+            return engine.Evaluate(widedScript);
         }
-        public static void SetRenewedEnvironment(this REngine engine, byte [] serializedEnvironment, long identifier, string environmentName = ".GlobalEnv")
+        public static void SetRenewedEnvironment(this REngine engine, byte [] serializedEnvironment, long identifier, [Optional] string environmentName)
         {
             var rawRVector = engine.CreateRawVector(serializedEnvironment);
             engine.SetSymbol(string.Format("serializedEnvironmentData{0}", identifier), rawRVector);
 
-            engine.Evaluate(string.Format(@"incomedData{0} <- unserialize(serializedEnvironmentData{0});
-                                            sapply(names(incomedData{0}), 
-                                            function(elem{0}) {{ assign(elem{0}, incomedData{0}[[elem{0}]], envir = {1}); }})",
-                                          identifier, environmentName));
+            var dataEnvironment = environmentName != default(string) ? GlobalEnvironmentName : environmentName;
+            var widedScript = GetWidedScript(SetRenewedEnvironmentListScript.ScriptBody, identifier, dataEnvironment);
+
+            engine.Evaluate(widedScript);
         }
         public static SymbolicExpression DeserializeRObject(this REngine engine, byte [] serializedObject, long identifier)
         {
             engine.SetSymbol(string.Format("objectToDeserialize{0}", identifier), engine.CreateRawVector(serializedObject));
-            engine.Evaluate(string.Format("deserializedRObject{0} <- unserialize(objectToDeserialize{0});", identifier));
+
+            var widedScript = GetWidedScript(SetRenewedEnvironmentListScript.ScriptBody, identifier);
             return engine.GetSymbol(string.Format("deserializedRObject{0}", identifier));
         }
         public static void PrintEnvironmentNames(this REngine engine, string environment = ".GlobalEnv")

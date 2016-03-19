@@ -69,10 +69,10 @@ namespace RManaged.Communications
     {
         public bool IsValidAnswer { get; protected set; }
 
-        public byte [] SerializedResult { get; protected set; }
-        public byte [] SerializedEnvironment { get; protected set; }
+        public ICollection<byte []> SerializedResult { get; protected set; }
+        public ICollection<byte []> SerializedEnvironment { get; protected set; }
 
-        public AnswerMessage(byte [] serializedResult, byte[] serializedEnvironment, bool isValidAnswer)
+        public AnswerMessage(ICollection<byte []> serializedResult, ICollection<byte[]> serializedEnvironment, bool isValidAnswer)
         {
             SerializedResult = serializedResult;
             SerializedEnvironment = serializedEnvironment;

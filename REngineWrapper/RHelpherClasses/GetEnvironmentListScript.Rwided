@@ -1,0 +1,8 @@
+﻿changedVariablesName{0} <- ls({1});
+
+changedVariablesName{0} <- changedVariablesName{0}[!(changedVariablesName{0} %in% exceptNames{0})];
+changedVariableValues{0} <- sapply(changedVariablesName{0}, function(elem{0}) get(elem{0}));
+                                              
+changedVariableList{0} <- setNames(as.list(changedVariableValues{0}), changedVariablesName{0});
+
+# maybe better to use changedVariableValues{0} <- lapply(changedVariablesName{0}, function(elem{0}) get(elem{0})); changedVariableList{0} <- setNames(changedVariableValues{0}, changedVariablesName{0});",

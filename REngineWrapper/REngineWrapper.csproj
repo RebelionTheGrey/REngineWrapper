@@ -109,6 +109,10 @@
     <None Include="packages.config" />
     <None Include="REngineExecutionThread\PreloadServiceConfig.R" />
     <None Include="REngineWrapperImplementation\PreloadServerConfig.R" />
+    <None Include="RHelpherClasses\DeserializeRObjectScript.Rwided" />
+    <None Include="RHelpherClasses\GetEnvironmentListScript.Rwided" />
+    <None Include="RHelpherClasses\SerializeRObjectScript.Rwided" />
+    <None Include="RHelpherClasses\SetRenewedEnvironmentScript.Rwided" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="ServerConfig.xml" />

@@ -34,35 +34,23 @@ namespace RManaged.Core
                 clientID[freeElem.Key] = false;
             }
 
-            var methodAttributes = typeof(IREngine).GetMethod(methodName, parameters.Select(elem => { return elem.GetType(); }).ToArray()).
-                             GetCustomAttributes(false); 
+            var methodAttributes = typeof(IREngine).GetMethod(methodName, parameters.Select(elem => { return elem.GetType(); }).ToArray()).GetCustomAttributes(false).Cast<Type>().ToList();
 
-            //Dummy code, need to make auxiliary static class of all types.
-            var typeCollection = new List<Type>() { typeof(InternalExecutionAttribute), typeof(ExternalExecutionAttribute),
-                                                    typeof(AnswerableAttribute), typeof(MulticastExecutionAttribute)};
 
-            IDictionary<Type, bool> attributes = new Dictionary<Type, bool>();
+            ICollection<SymbolicExpression> resultCollection = null;            
 
-            typeCollection.ForEach(attr =>
+            if (methodAttributes.Contains(typeof(ExternalExecutionAttribute)))
             {
-                attributes.Add(attr, methodAttributes.Any(elem => elem.GetType().Equals(attr)));
-            });
+                var requestMessage = new MethodCallMessage(methodName, parameters, methodAttributes);
 
-            ICollection<SymbolicExpression> resultCollection = null;
-
-            if (attributes.First(elem => elem.Key.Equals(typeof(ExternalExecutionAttribute))).Value)
-            {
-                var methodValidAttributes = attributes.Where(elem1 => elem1.Value == true).Select(elem2 => { return elem2.Key; }).ToList();
-                var requestMessage = new MethodCallMessage(methodName, parameters, methodValidAttributes);
-
-                if (!attributes.First(elem => elem.Key.Equals(typeof(MulticastExecutionAttribute))).Value)
+                if (!methodAttributes.Contains(typeof(MulticastExecutionAttribute)))
                 {
                     var clientParams = new Dictionary<string, object>();
                     clientParams.Add("clientID", freeElem.Key);
 
                     Сonnector.SendMessage(requestMessage, clientParams);
 
-                    if (attributes.First(elem => elem.Key.Equals(typeof(AnswerableAttribute))).Value)
+                    if (methodAttributes.Contains(typeof(AnswerableAttribute)))
                     {
                         var incomedMessage = Сonnector.ReceiveMessage(clientParams);
                         var parsedMessage = ParseAnswerMessage(incomedMessage);
@@ -72,7 +60,7 @@ namespace RManaged.Core
 
                         DecoratedEngine.SetRenewedEnvironment(resultEnvironment, InternalRandomIdentifier);
 
-                        var environmentMessage = new EnvironmentWideMessage(new[] { parsedMessage.Item2 });
+                        var environmentMessage = new EnvironmentWideMessage(RHelper.GlobalEnvironmentName, new[] { parsedMessage.Item2 });
                         ((TCPServer)this.Сonnector).MulticastSendMessage(environmentMessage, new long[] { freeElem.Key });
                     }
                     else
@@ -82,22 +70,20 @@ namespace RManaged.Core
                 }
             }
 
-            if (attributes.First(elem => elem.Key.Equals(typeof(InternalExecutionAttribute))).Value)
+            if (methodAttributes.Contains(typeof(InternalExecutionAttribute)))
             {
                 var internalExecutionResult = execute(objectToInvoke, parameters.ToArray());
                 resultCollection = new SymbolicExpression[] { internalExecutionResult as SymbolicExpression };
 
-                if (attributes.First(elem => elem.Key.Equals(typeof(MulticastExecutionAttribute))).Value)
+                if (methodAttributes.Contains(typeof(MulticastExecutionAttribute)))
                 {
-                    var environment = DecoratedEngine.GetEnvironmentList(InternalRandomIdentifier, ".GlobalEnv", RHelper.RSystemWidedInternals);
+                    var environment = DecoratedEngine.GetEnvironmentList(InternalRandomIdentifier, RHelper.GlobalEnvironmentName, RHelper.RSystemWidedInternals);
                     var serializedEnvironment = DecoratedEngine.SerializeRObject(environment, InternalRandomIdentifier);
 
-                    var environmentMessage = new EnvironmentWideMessage(new[] { serializedEnvironment });
+                    var environmentMessage = new EnvironmentWideMessage(RHelper.GlobalEnvironmentName,  new[] { serializedEnvironment });
                     ((TCPServer)this.Сonnector).MulticastSendMessage(environmentMessage, new long[] { freeElem.Key });
                 }
             }
-
-            DecoratedEngine.PrintEnvironmentNames();
 
             clientID[freeElem.Key] = true;
             semaphores.Release(1);

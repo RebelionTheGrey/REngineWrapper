@@ -73,7 +73,7 @@ namespace RManaged.Core
 
             Engine.Initialize();
 
-            var preloadScript = new Script(PreloadScriptName, null);
+            var preloadScript = new Script(PreloadScriptName);
             Engine.Evaluate(preloadScript.ScriptBody);
 
             #endregion
@@ -91,26 +91,21 @@ namespace RManaged.Core
 
         private void EnvironmentWide(BaseMessage message)
         {
-            Console.WriteLine("Got new Environment wide message");
-
             var incomingMessage = message as EnvironmentWideMessage;
 
             if (incomingMessage != null)
             {
-                Engine.SetRenewedEnvironment(incomingMessage.GetData().First(), InternalRandomIdentifier);
+                Engine.SetRenewedEnvironment(incomingMessage.Data.First(), InternalRandomIdentifier);
             }
-
-            Engine.PrintEnvironmentNames();
         }
-
         private void Execute(BaseMessage message)
         {
             var incomingMessage = message as MethodCallMessage;
 
             if (incomingMessage != null)
             {
-                var method = Engine.GetType().GetMethod(incomingMessage.GetMethod(), incomingMessage.GetData().Select(elem => { return elem.GetType(); }).ToArray());
-                var result = method.Invoke(Engine, incomingMessage.GetData().ToArray());
+                var method = Engine.GetType().GetMethod(incomingMessage.MethodName, incomingMessage.Parameters.Select(elem => { return elem.GetType(); }).ToArray());
+                var result = method.Invoke(Engine, incomingMessage.Parameters.ToArray());
 
                 var attributes = incomingMessage.MethodAttributes;
                 
@@ -127,14 +122,10 @@ namespace RManaged.Core
                         asMultipleInstance.ForEach(elem => serializedList.Add(Engine.SerializeRObject((SymbolicExpression)result, InternalRandomIdentifier)));
 
 
-                    var environment = Engine.GetEnvironmentList(InternalRandomIdentifier, ".GlobalEnv", RHelper.RSystemWidedInternals);
-                    var serializedEnvironment = Engine.SerializeRObject(environment, InternalRandomIdentifier);
-
-                    var dataTosend = new Dictionary<string, ICollection<byte[]>>();
-                    dataTosend.Add("result", serializedList);
-                    dataTosend.Add("environment", new[] { serializedEnvironment });
-
-                    Сonnector.SendMessage(new AnswerMessage(dataTosend, true));
+                    var environment = Engine.GetEnvironmentList(InternalRandomIdentifier, RHelper.GlobalEnvironmentName, RHelper.RSystemWidedInternals);
+                    var serializedEnvironment = new[] { Engine.SerializeRObject(environment, InternalRandomIdentifier) };
+                    
+                    Сonnector.SendMessage(new AnswerMessage(serializedList, serializedEnvironment, true));
                 }
             }
         }
@@ -144,10 +135,32 @@ namespace RManaged.Core
 
             Initialize();
         }
+
+        #region IDisposable Support
+        private bool disposedValue = false; 
+
+        void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    Engine.Dispose();
+                    ((TCPClient)Сonnector).Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+         ~RExecutionThread()
+        {
+            Dispose(false);
+        }
         public void Dispose()
         {
-            Engine.Dispose();
-            ((TCPClient)Сonnector).Dispose();
+            Dispose(true);
+            GC.SuppressFinalize(this);
         }
+        #endregion
     }
 }
