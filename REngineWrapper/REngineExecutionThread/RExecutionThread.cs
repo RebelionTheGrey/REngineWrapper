@@ -121,7 +121,6 @@ namespace RManaged.Core
                     else
                         asMultipleInstance.ForEach(elem => serializedList.Add(Engine.SerializeRObject((SymbolicExpression)result, InternalRandomIdentifier)));
 
-
                     var environment = Engine.GetEnvironmentList(InternalRandomIdentifier, RHelper.GlobalEnvironmentName, RHelper.RSystemWidedInternals);
                     var serializedEnvironment = new[] { Engine.SerializeRObject(environment, InternalRandomIdentifier) };
                     

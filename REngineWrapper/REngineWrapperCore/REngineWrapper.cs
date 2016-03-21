@@ -107,6 +107,7 @@ namespace RManaged.Core
         {
             return DecoratedEngine.Evaluate(statement);
         }
+        public void MulticastEvaluate(string statement) { DecoratedEngine.Evaluate(statement); }
         public void ForceGarbageCollection()
         {
             DecoratedEngine.ForceGarbageCollection();

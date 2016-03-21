@@ -58,10 +58,14 @@ namespace RManaged.Core
 
                         var resultEnvironment = parsedMessage.Item2;
 
-                        DecoratedEngine.SetRenewedEnvironment(resultEnvironment, InternalRandomIdentifier);
+                        if (methodAttributes.Contains(typeof(AnswerableAttribute)))
+                        {
 
-                        var environmentMessage = new EnvironmentWideMessage(RHelper.GlobalEnvironmentName, new[] { parsedMessage.Item2 });
-                        ((TCPServer)this.Сonnector).MulticastSendMessage(environmentMessage, new long[] { freeElem.Key });
+                            DecoratedEngine.SetRenewedEnvironment(resultEnvironment, InternalRandomIdentifier);
+
+                            var environmentMessage = new EnvironmentWideMessage(RHelper.GlobalEnvironmentName, new[] { parsedMessage.Item2 });
+                            ((TCPServer)this.Сonnector).MulticastSendMessage(environmentMessage, new long[] { freeElem.Key });
+                        }
                     }
                     else
                     {
@@ -75,7 +79,7 @@ namespace RManaged.Core
                 var internalExecutionResult = execute(objectToInvoke, parameters.ToArray());
                 resultCollection = new SymbolicExpression[] { internalExecutionResult as SymbolicExpression };
 
-                if (methodAttributes.Contains(typeof(MulticastExecutionAttribute)))
+                if (methodAttributes.Contains(typeof(EnvironmentSwapAttribute)))
                 {
                     var environment = DecoratedEngine.GetEnvironmentList(InternalRandomIdentifier, RHelper.GlobalEnvironmentName, RHelper.RSystemWidedInternals);
                     var serializedEnvironment = DecoratedEngine.SerializeRObject(environment, InternalRandomIdentifier);

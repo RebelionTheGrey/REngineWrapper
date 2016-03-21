@@ -60,13 +60,13 @@ namespace RManaged.BaseTypes
         event EventHandler Disposing;
         //static string[] BuildRArgv(StartupParameter parameter);
 
-        [ExternalExecution, MulticastExecution, InternalExecution]
+        [InternalExecution, EnvironmentSwap]
         void ClearGlobalEnvironment(bool garbageCollectR = true, bool garbageCollectDotNet = true, bool removeHiddenRVars = false, bool detachPackages = false, string[] toDetach = null);
         
-        [ExternalExecution, MulticastExecution, InternalExecution]
+        [InternalExecution, EnvironmentSwap]
         SymbolicExpression CreateFromNativeSexp(IntPtr sexp);
 
-        [InternalExecution, Answerable]
+        [ExternalExecution, Answerable, EnvironmentSwap]
         IEnumerable<SymbolicExpression> Defer(Stream stream);
         //static void DoDotNetGarbageCollection();
         
@@ -76,7 +76,10 @@ namespace RManaged.BaseTypes
         [ExternalExecution, Answerable, EnvironmentSwap]
         SymbolicExpression Evaluate(string statement);
 
-        [ExternalExecution, InternalExecution]
+        [ExternalExecution, MulticastExecution]
+        void MulticastEvaluate(string statement);
+
+        [InternalExecution, ExternalExecution, MulticastExecution]
         void ForceGarbageCollection();
         //static REngine GetInstance(string dll = null, bool initialize = true, StartupParameter parameter = null, ICharacterDevice device = null);
 
@@ -90,17 +93,17 @@ namespace RManaged.BaseTypes
         SymbolicExpression GetSymbol(string name, REnvironment environment);
         //static int[] IndexOfAll(string sourceString, string matchString);
 
-        //[InternalExecution]
-        //void Initialize(StartupParameter parameter = null, ICharacterDevice device = null, bool setupMainLoop = true);
+        [InternalExecution]
+        void Initialize(StartupParameter parameter = null, ICharacterDevice device = null, bool setupMainLoop = true);
 
-        [InternalExecution, MulticastExecution]
+        [InternalExecution, ExternalExecution, MulticastExecution]
         void SetCommandLineArguments(string[] args);
         //static void SetEnvironmentVariables(string rPath = null, string rHome = null);
 
-        [InternalExecution, MulticastExecution]
+        [InternalExecution, ExternalExecution, MulticastExecution]
         void SetSymbol(string name, SymbolicExpression expression);
 
-        [InternalExecution, MulticastExecution]
+        [InternalExecution, ExternalExecution, MulticastExecution]
         void SetSymbol(string name, SymbolicExpression expression, REnvironment environment);
 
         [InternalExecution]

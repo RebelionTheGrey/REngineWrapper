@@ -21,9 +21,9 @@ namespace RManaged.BaseTypes
         private static readonly Task<T> _task = System.Threading.Tasks.Task.FromResult(default(T));
     }
 
-    public class ExternalExecutionAttribute : Attribute { }
-    public class InternalExecutionAttribute : Attribute { }
-    public class MulticastExecutionAttribute : Attribute { }
-    public class EnvironmentSwapAttribute : Attribute { }
-    public class AnswerableAttribute : Attribute { }
+    public class ExternalExecutionAttribute : Attribute { } //need to execute on same slave node
+    public class InternalExecutionAttribute : Attribute { } //need to execute just on main node
+    public class MulticastExecutionAttribute : Attribute { } //need to execute on all slave nodes
+    public class EnvironmentSwapAttribute : Attribute { } //need to send renewed enviroment on all slave nodes
+    public class AnswerableAttribute : Attribute { } //need to send execution result back to the main node
 }
